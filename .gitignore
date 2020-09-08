@@ -1,0 +1,14 @@
+*.o
+**/*.o
+a
+a.exe
+temp
+**/temp
+.temp
+**/.temp
+temp.*
+**/temp.*
+*.temp
+**/*.temp
+.projroot
+.vscode

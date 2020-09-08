@@ -1,0 +1,103 @@
+PROTO-C: C with Prototype
+
+
+WHAT IS PROTOTYPE
+
+Prototype is a programming model mostly known by the adoption in JavaScript. It's a way of implementing Object-Oriented Programming. What makes it different from the object model of C/C++/Java/C# is that prototype is simpler and allows more configurable and entensive interface.
+
+The principle of prototype is very simple. It is based on map object - the most useful data structure in JavaScript. A map object consists of multiple key-value pairs. It creates a relation between keys and values, very similar to a map of two sets in math. It is not important which implementation method is used for the map (hash list, balanced binary tree, linked list, or record), the logical structure of a map is the only thing that matters.
+
+Informally, a prototype is a map that reflects the structure of objects it will produce. It is like a mould, or pattern. But a prototype allows more, which is called methods on it. A prototype with data fields and methods can produce objects with different data but the same methods. Demonstration would be like:
+
+Prototype of Circle {
+  data: {
+    xAxis, yAxis, radius
+  },
+  methods: {
+    perimeter() -> radius * 2 * PI,
+    area() -> radius * radius * PI
+  }
+}
+
+The above example defines the prototype of a circle, contains its coordination on a plate and its radius, and two methods to calculate its perimeter and area. To create a circle from it, we require all the data fields to make a unique circle:
+
+c = Circle(xAxis: 0, yAxis: 1, radius: 4)
+
+And then calculate the related values:
+
+c.perimeter() // c.area()
+
+
+PROTOTYPE CHAIN
+
+Only the features above is not enough for OOP, as OOP require inheritance. Look at JavaScript, inheritance is approached by simply add a __proto__ field to objects created by the prototype. __proto__ points to the prototype, which contains a __proto__ field which points to its parent prototype. So just search the __proto__ chain we will know whether an object is an instance of a type, or a type is derived by another. Demonstration:
+
+Prototype of Shape {
+  data: {
+    xAxis, yAxis
+  },
+  methods: {
+    draw() -> print("Shape at (" + xAxis + "," + yAxis + ")")
+  }
+}
+
+Prototype of Circle derived by Shape {
+  __proto__: Shape,
+  data: {
+    radius
+  },
+  methods: {
+    override Shape.draw() -> print("Circle at (" + xAxis + "," + yAxis + ") r=" + radius),
+    perimeter() -> radius * 2 * PI,
+    area() -> radius * radius * PI
+  }
+}
+
+c = Circle(xAxis: 0, yAxis: 1, radius: 4)
+// c.__proto__ == Circle
+// c.__proto__.__proto__ == Shape
+// c instanceof Circle == true
+// c instanceof Shape == true
+
+
+IMPLEMENT PROTOTYPE IN C
+
+typedef struct Prototype Prototype;
+struct Prototype {
+  Ref(Prototype) __proto__;
+  Own(char*) data;    // A list of field names
+  Own(void) methods;  // A record defines all its methods
+};
+
+Prototype* Shape;
+
+void* _Shape_constr(int xAxis, int yAxis) {
+  map* this = new_map();
+  set(this, "__proto__", Shape);
+  set(this, "xAxis", xAxis);
+  set(this, "yAxis", yAxis);
+  return this;
+}
+
+void _Shape_method_draw(void* this) {
+  if (!instanceof(this, Shape)) {
+    throw...
+  }
+  printf("Shape at (%d, %d)", (int)get(this, "xAxis"), (int)get(this, "yAxis"));
+}
+
+char* _Shape_data[] = { "xAxis", "yAxis" };
+struct _Shape_methods {
+  void* (*constr)(int xAxis, int yAxis);
+  void (*draw)(void* this);
+} _Shape_methods = {
+  _Shape_constr,
+  _Shape_method_draw
+};
+Prototype _Shape = {
+  NULL, &_Shape_data, &_Shape_methods
+};
+Prototype* Shape = &_Shape;
+
+void* s = Shape->constr(0, 1);
+Shape->draw(s); // "Shape at (0, 1)"
